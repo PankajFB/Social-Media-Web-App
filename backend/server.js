@@ -4,13 +4,14 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const connectDb = require("./db/connect");
+const { emit } = require("process");
 
 // port to run the server on
 const PORT = process.env.PORT || 4000;
 
 const app = express();
 app.use(bodyParser.json());
-app.use(express.json())
+app.use(express.json());
 const server = createServer(app);
 
 // to use the socket.io with the express server
@@ -29,8 +30,8 @@ app.use(cors());
 
 // array to hold the connected users
 let connectedUsers = [];
-console.log("connected users are :")
-console.log(connectedUsers)
+console.log("connected users are :");
+console.log(connectedUsers);
 
 // socket.io connection
 io.on("connection", (socket) => {
@@ -39,11 +40,23 @@ io.on("connection", (socket) => {
   // console.log("connected users are : "+connectedUsers);
 
   // sending the connected users array to the client
-//   io.emit("connectedUsers", connectedUsers);
+  //   io.emit("connectedUsers", connectedUsers);
 
-  socket.on("myname", (data) => {
-   const {name} = data;
-   console.log(name)
+  socket.on("my_data", (data) => {
+    const {displayName, email, photoURL} = data.singedInUser;
+    connectedUsers.push(data.singedInUser);
+    console.log(data);
+    console.log("my data is : " + displayName, email, photoURL);
+    if(data != null){
+      // io.broadcas("my_data", {displayName, email,  photoURL});
+      socket.broadcast.emit('refresh_user_list', {displayName, email,  photoURL, socketId:data.socketId});
+    }
+  });
+
+  socket.on("message", (data) => {
+    const { id, message } = data;
+    io.to(id).emit("message", message);
+    console.log(data);
   });
 
   // removing the user from the connected users array

@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useFirebase } from "../../Context/FirebaseContext";
 import { signOut } from "firebase/auth";
 // import { SocketContext } from "../../Context/SocketContext";
 import { io } from "socket.io-client";
-import {useSocket} from "@/Context/SocketContext";
+import { useSocket } from "@/Context/SocketContext";
 
 function Dashboard() {
   const firebase = useFirebase();
@@ -12,40 +12,52 @@ function Dashboard() {
 
   const { displayName, email, photoURL } = singedInUser;
 
-
   const socket = useSocket();
-  console.log(socket)
-  
+  console.log(socket);
 
-  socket.on("connect", () => {
-    console.log(
-      "Connected to Socket.IO server and your socket id  : ",
-      socket.id
-    );
-  });
-  socket.on("disconnect", () => {
-    console.log("Disconnected from Socket.IO server");
-  });
+  const connectedUsers = [];
+  // const connectedUsers = [
+  //   { socketId: "123", displayName: "Pankaj" },
+  //   { socketId: "123", displayName: "Saroj" },
+  // ];
 
-  // useEffect(() => {
-  //   socket.on("connect", () => {
-  //     console.log("Socket Connected successfully");
-  //   });
-  //   socket.on("disconnect", () => {
-  //     console.log("Socket Disconnected successfully");
-  //   });
-  //   socket.on("connect_error", (err) => {
-  //     console.log("Socket Connection Error", err);
-  //   });
-  //   return () => {
-  //     socket.off("connect");
-  //     socket.off("disconnect");
-  //     socket.off("connect_error");
-  //   };
-  // }, [socket]);
+  useEffect(() => {
+    // socket.on("message", (data) => {
+    //   console.log("Message from server", data);
+    // });
+
+    socket.on("refresh_user_list", (data) => {
+      console.log("The connected users are : ", data);
+      const { displayName, email, photoURL, socketId } = data;
+      // setConnectedUsers(...connetedusers, { socketId,  displayName, email, photoURL})
+      if (data.displayName) {
+        connectedUsers.push({ socketId, displayName, email, photoURL });
+        console.log(connectedUsers);
+      }
+    });
+
+    // socket.on("my_data", (data) => {
+    //   console.log("the incoming data is : " + data)
+    // });
+
+    return () => {
+      socket.off("message");
+    };
+  }, []);
+
+  useEffect(() => {
+    const sendMyDataToServer = () => {
+      socket.emit("my_data", { singedInUser, socketId: socket.id });
+    };
+    sendMyDataToServer();
+  }, [singedInUser]);
 
   return (
     <>
+      {/* just a test to c if scoket if working fine */}
+      {/* <h1>our button is her</h1>
+<button className="btn btn-primary" onClick={clickHandle}></button> */}
+
       <div className="g-sidenav-show">
         <nav
           className="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start position-absolute ms-3 bg-white"
@@ -666,52 +678,60 @@ function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>
-                          <div className="d-flex px-2 py-1">
-                            <div>
-                              <img
-                                src="https://demos.creative-tim.com/soft-ui-dashboard/assets/img/team-2.jpg"
-                                className="avatar avatar-sm me-3"
-                              />
-                            </div>
-                            <div className="d-flex flex-column justify-content-center">
-                              <h6 className="mb-0 text-sm">John Michael</h6>
-                              <p className="text-xs text-secondary mb-0">
-                                john@creative-tim.com
+                      {/* we will render the conneteduser list here */}
+
+                      {connectedUsers.map((user) => (
+                        <div>
+                          <tr>
+                            <td>
+                              <div className="d-flex px-2 py-1">
+                                <div>
+                                  <img
+                                    src="https://demos.creative-tim.com/soft-ui-dashboard/assets/img/team-2.jpg"
+                                    className="avatar avatar-sm me-3"
+                                  />
+                                </div>
+                                <div className="d-flex flex-column justify-content-center">
+                                  <h6 className="mb-0 text-sm">
+                                    {user?.displayName}
+                                  </h6>
+                                  <p className="text-xs text-secondary mb-0">
+                                    john@creative-tim.com
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <p className="text-xs font-weight-bold mb-0">
+                                Manager
                               </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>
-                          <p className="text-xs font-weight-bold mb-0">
-                            Manager
-                          </p>
-                          <p className="text-xs text-secondary mb-0">
-                            Organization
-                          </p>
-                        </td>
-                        <td className="align-middle text-center text-sm">
-                          <span className="badge badge-sm bg-gradient-success">
-                            Online
-                          </span>
-                        </td>
-                        <td className="align-middle text-center">
-                          <span className="text-secondary text-xs font-weight-bold">
-                            23/04/18
-                          </span>
-                        </td>
-                        <td className="align-middle">
-                          <a
-                            href="/"
-                            className="text-secondary font-weight-bold text-xs"
-                            data-toggle="tooltip"
-                            data-original-title="Edit user"
-                          >
-                            Edit
-                          </a>
-                        </td>
-                      </tr>
+                              <p className="text-xs text-secondary mb-0">
+                                Organization
+                              </p>
+                            </td>
+                            <td className="align-middle text-center text-sm">
+                              <span className="badge badge-sm bg-gradient-success">
+                                Online
+                              </span>
+                            </td>
+                            <td className="align-middle text-center">
+                              <span className="text-secondary text-xs font-weight-bold">
+                                23/04/18
+                              </span>
+                            </td>
+                            <td className="align-middle">
+                              <a
+                                href="/"
+                                className="text-secondary font-weight-bold text-xs"
+                                data-toggle="tooltip"
+                                data-original-title="Edit user"
+                              >
+                                Edit
+                              </a>
+                            </td>
+                          </tr>
+                        </div>
+                      ))}
                     </tbody>
                   </table>
                 </div>
