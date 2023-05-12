@@ -34,21 +34,20 @@ console.log(props.connectedUsers)
                 {/* <h1>This is my name : {props.connectedUsers}</h1> */}
 
                 {props.connectedUsers.map((user) => (
-                  
-                    <tr>
+                    <tr key={user.socketId}>
                       <td>
                         <div className="d-flex px-2 py-1">
                           <div>
                             <img
-                              src={user.photoURL}
+                              src={user.user.photoURL}
                               alt="DP"
                               className="avatar avatar-sm me-3"
                             />
                           </div>
                           <div className="d-flex flex-column justify-content-center">
-                            <h6 className="mb-0 text-sm">{user.displayName}</h6>
+                            <h6 className="mb-0 text-sm">{user.user.displayName}</h6>
                             <p className="text-xs text-secondary mb-0">
-                              {user.email}
+                              {user.user.email}
                             </p>
                           </div>
                         </div>

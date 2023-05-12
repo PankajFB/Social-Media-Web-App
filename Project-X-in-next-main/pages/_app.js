@@ -7,6 +7,16 @@ import { SocketProvider } from "@/Context/SocketContext";
 export default function App({ Component, pageProps }) {
 
   
+//    // use the firebase context
+// const firebase = useFirebase();
+
+//    //  destructure the firebase context
+  //  const {auth,singedInUser,setSingedInUser} = firebase;
+ 
+ // to check if the user is logged in or not
+
+
+  
   return (
     <>
       <Head>

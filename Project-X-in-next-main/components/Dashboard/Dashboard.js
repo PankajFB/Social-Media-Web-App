@@ -5,6 +5,7 @@ import { signOut } from "firebase/auth";
 import { io } from "socket.io-client";
 import { useSocket } from "@/Context/SocketContext";
 import ConnectedUsers from "./ConnectedUsers";
+import Chat from "../Chat/Chat";
 
 function Dashboard() {
   const firebase = useFirebase();
@@ -18,48 +19,54 @@ function Dashboard() {
 
   const [connectedUsers, setConnectedUsers] = useState([]);
 
-  //   { socketId: "123", displayName: "Pankaj" },
-  //   { socketId: "123", displayName: "Saroj" },
-  // ];
-  // const connectedUsers = [];
+ 
 
-
-
+  
 
   useEffect(() => {
-    // socket.on("message", (data) => {
-    //   console.log("Message from server", data);
-    // });
 
+    // to emit the user data to the server with the socket id
+    socket.emit("my_data", { singedInUser, socketId: socket.id });
+
+
+    // to get the connected users from the server
     socket.on("refresh_user_list", (data) => {
-      console.log("The connected users are : ", data);
-      const { displayName, email, photoURL, socketId } = data;
-      // setConnectedUsers(...connetedusers, { socketId,  displayName, email, photoURL})
-      if (data.displayName) {
-        const newUser = { socketId, displayName, email, photoURL };
+      
+      // if  data is not null then set the connected users in the state connectedUsers
+      if (data) {
+        console.log(data);
+        console.log("its working somehow");
+
+// to set the connected users in the state connectedUsers
+        setConnectedUsers(data);
+
+        console.log(connectedUsers)
+
+        // const { displayName, email, photoURL, socketId } = data.user;
+        // const newUser = { socketId, displayName, email, photoURL };
         // connectedUsers.push({ socketId, displayName, email, photoURL });
-        setConnectedUsers([...connectedUsers, newUser]);
-        console.log(connectedUsers);
+        // setConnectedUsers([...connectedUsers, newUser]);
+
+      } else {
+        console.log("no data from the server");
       }
+
+      // if (data) {
+      //   const { displayName, email, photoURL, socketId } = data;
+
+      //   console.log(connectedUsers);
+      // }
     });
 
-    // socket.on("my_data", (data) => {
-    //   console.log("the incoming data is : " + data)
-    // });
-
     return () => {
-      socket.off("refresh_user_list")
-      socket.off("message");
-    };
-  }, []);
+      socket.off("refresh_user_list");
+    }
 
-  useEffect(() => {
-    const sendMyDataToServer = () => {
-      socket.emit("my_data", { singedInUser, socketId: socket.id });
-    };
-    sendMyDataToServer();
+    
   }, [singedInUser]);
 
+
+  
   return (
     <>
       {/* just a test to c if scoket if working fine */}
@@ -663,13 +670,14 @@ function Dashboard() {
             </div>
             {/* our connected user components will be here */}
 
-            { connectedUsers? (
-        <ConnectedUsers connectedUsers={connectedUsers}></ConnectedUsers>
-      ) : (
-        <p>Loading...</p>
-      )}
+            {connectedUsers ? (
+              <ConnectedUsers connectedUsers={connectedUsers}></ConnectedUsers>
+            ) : (
+              <p>Loading...</p>
+            )}
 
-           
+            {/* chat component will be here */}
+            <Chat></Chat>
           </div>
           <footer className="footer pt-3 pb-4">
             <div className="container-fluid">

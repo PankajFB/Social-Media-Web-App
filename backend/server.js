@@ -6,6 +6,8 @@ const bodyParser = require("body-parser");
 const connectDb = require("./db/connect");
 const { emit } = require("process");
 
+const User = require("./db/schema/userSchema");
+
 // port to run the server on
 const PORT = process.env.PORT || 4000;
 
@@ -30,26 +32,53 @@ app.use(cors());
 
 // array to hold the connected users
 let connectedUsers = [];
-console.log("connected users are :");
-console.log(connectedUsers);
 
 // socket.io connection
 io.on("connection", (socket) => {
   console.log("New client connected " + socket.id);
-  connectedUsers.push(socket.id);
+  // connectedUsers.push(socket.id);
   // console.log("connected users are : "+connectedUsers);
 
   // sending the connected users array to the client
   //   io.emit("connectedUsers", connectedUsers);
 
   socket.on("my_data", (data) => {
-    const {displayName, email, photoURL} = data.singedInUser;
-    connectedUsers.push(data.singedInUser);
+
+// first we wil check if the user is already registered or not
+// if the user is already registered then we will not add it to the connected users array
+
+const { displayName, email, photoURL } = data.singedInUser;
+
+const newUser = new User({
+  displayName,
+  email,
+  photoURL,
+});
+
+newUser.save()
+  .then(() => {
+    console.log('User saved successfully');
+  })
+  .catch((err) => {
+    if (err.code === 11000) { // Check for duplicate key error
+      console.log('Email already exists');
+    } else {
+      console.log('Error saving user: ', err);
+    }
+  });
+   
+    if (displayName) {
+      connectedUsers.push({ user: data.singedInUser, socketId: data.socketId });
+    }
+    console.log("connected users are : ", connectedUsers);
     console.log(data);
-    console.log("my data is : " + displayName, email, photoURL);
-    if(data != null){
-      // io.broadcas("my_data", {displayName, email,  photoURL});
-      socket.broadcast.emit('refresh_user_list', {displayName, email,  photoURL, socketId:data.socketId});
+    // console.log("my data is : " + displayName, email, photoURL);
+    if (data.singedInUser.displayName) {
+      // sending the connected users array to all the clients except the one who is sending the data
+      socket.broadcast.emit("refresh_user_list", connectedUsers);
+
+      // sending the connected users array to the client who is sending the data
+      io.to(data.socketId).emit("refresh_user_list", connectedUsers);
     }
   });
 
@@ -61,7 +90,12 @@ io.on("connection", (socket) => {
 
   // removing the user from the connected users array
   socket.on("disconnect", () => {
-    // connectedUsers.delete(socket.id);
+    connectedUsers = connectedUsers.filter(
+      (user) => user.socketId !== socket.id
+    );
+
+    // to resfresh the user list on the client side
+    socket.broadcast.emit("refresh_user_list", connectedUsers);
   });
 });
 
