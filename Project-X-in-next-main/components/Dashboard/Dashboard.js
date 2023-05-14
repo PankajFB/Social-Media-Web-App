@@ -66,7 +66,7 @@ function Dashboard() {
   }, [singedInUser]);
 
 
-  
+
   return (
     <>
       {/* just a test to c if scoket if working fine */}
@@ -671,7 +671,7 @@ function Dashboard() {
             {/* our connected user components will be here */}
 
             {connectedUsers ? (
-              <ConnectedUsers connectedUsers={connectedUsers}></ConnectedUsers>
+              <ConnectedUsers connectedUsers={connectedUsers} email={email}></ConnectedUsers>
             ) : (
               <p>Loading...</p>
             )}
