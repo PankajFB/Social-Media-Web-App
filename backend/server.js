@@ -48,20 +48,18 @@ io.on("connection", (socket) => {
 
     const { displayName, email, photoURL } = data.singedInUser;
     console.log("is user already registered :");
-   
-    const findDublicateEmail=()=>{
-      User.findOne({email : email}).then((result)=>{
-        console.log(result);
-        if(result){
+
+    const findDublicateEmail = () => {
+      User.findOne({ email: email }).then((result) => {
+        if (result) {
           console.log("user already exists");
-        }
-        else{
+        } else {
           const newUser = new User({
             displayName,
             email,
             photoURL,
           });
-      
+
           if (displayName) {
             newUser
               .save()
@@ -78,17 +76,14 @@ io.on("connection", (socket) => {
               });
           }
         }
-      })     
-    }
+      });
+    };
     findDublicateEmail();
     // console.log(User.findOne({email : email}))
-
-   
 
     if (displayName) {
       connectedUsers.push({ user: data.singedInUser, socketId: data.socketId });
     }
-    console.log(data);
     // console.log("my data is : " + displayName, email, photoURL);
     if (data.singedInUser.displayName) {
       // sending the connected users array to all the clients except the one who is sending the data
@@ -105,27 +100,149 @@ io.on("connection", (socket) => {
     console.log(data);
   });
 
+  socket.on("friend_request_list", (data) => {
+    const { email, id } = data;
+
+    User.findOne({ email: email }).then((result) => {
+      if (result?.request) {
+        //     console.log(result.request);
+        //     console.log("sending the friends list to the client");
+        // io.to(id).emit("friend_request_list", {data :result.request});
+
+        result.request.map((object) => {
+          User.findOne({ email: object.from }).then((result) => {
+            console.log(result);
+            io.to(id).emit("friend_request_list", { data: result });
+          });
+        });
+      } else {
+        console.log("The user has no request");
+      }
+    });
+  });
+
+  // this event will accept the friend request came from the client side
+  socket.on("accept_request", (data) => {
+    const { to, from } = data;
+    console.log("The from and to is : " + from + " " + to);
+
+    const acceptRequest = () => {
+      // Add the friend to the user who accepted the request
+      User.findOne({ email: from }).then((result) => {
+        if (result.friends.find((object) => object.email === to)) {
+          console.log("They are already friends");
+        } else {
+          const newFriend = {
+            email: to,
+          };
+
+          User.updateOne(
+            { email: from }, // filter for the document to update
+            { $push: { friends: newFriend } } // update the document with the new address
+          )
+            .then((result) => {
+              console.log("The Friends list is updated");
+            })
+            .catch((err) => {
+              console.error("error :" + err);
+            });
+        }
+      });
+    };
+
+    const acceptRequest2 = () => {
+      // add the friend to the user who sent the request
+      User.findOne({ email: from }).then((result) => {
+        if (result.friends.find((object) => object.email === to)) {
+          console.log("They are already friends");
+        } else {
+          const newFriend2 = {
+            email: from,
+          };
+
+          User.updateOne(
+            { email: to }, // filter for the document to update
+            { $push: { friends: newFriend2 } } // update the document with the new address
+          )
+            .then((result) => {
+              console.log("The Friends list is updated");
+            })
+            .catch((err) => {
+              console.error("error :" + err);
+            });
+        }
+      });
+    };
+
+    const deleteRequest = () => {
+      // delete the friend request from the user who accepted the request
+      User.findOne({ email: from }).then((result) => {
+        if (result.request.find((object) => object.from === to)) {
+          const delReq = {
+           from:to,
+           to:from
+          };
+
+          User.updateOne(
+            { email: from }, // filter for the document to update
+            { $pull: { request: delReq } } // update the document with the new address
+          )
+            .then((result) => {
+              console.log("The Friends request is deleted");
+            })
+            .catch((err) => {
+              console.error("error :" + err);
+            });
+        } else {
+          console.log("The request is already deleted");
+        }
+      });
+    };
+
+    acceptRequest();
+    acceptRequest2();
+    deleteRequest();
+
+    // delete the friend request from the user who sent the request
+  });
+
+  socket.on("friend_list", (data) => {
+    const { email, id } = data;
+
+    User.findOne({ email: email }).then((result) => {
+      if (result?.friends) {
+        //     console.log(result.request);
+        //     console.log("sending the friends list to the client");
+        // io.to(id).emit("friend_request_list", {data :result.request});
+
+        result.friends.map((object) => {
+          console.log(object.email);
+          User.findOne({ email: object.email }).then((result) => {
+            io.to(id).emit("friend_list", { data: result });
+          });
+        });
+      } else {
+        console.log("The user has no Friends 😅");
+      }
+    });
+  });
+
   socket.on("send_friend_request", (data) => {
-    console.log(data);
     const { from, to } = data;
 
-    const findDublicateRequest=()=>{
-      User.findOne({email : to}).then((result)=>{
-        if(result.request.find(object => object.from === from  ) ){
-          console.log(result)
+    const findDublicateRequest = () => {
+      User.findOne({ email: to }).then((result) => {
+        if (result?.request?.find((object) => object.from === from)) {
           console.log("Request already sent");
-        }
-        else{
-         
+        } else {
           const newRequest = {
             from: from,
             to: to,
           };
-      
+
           User.updateOne(
             { email: to }, // filter for the document to update
             { $push: { request: newRequest } } // update the document with the new address
-
           )
             .then((result) => {
               console.log("The document is updated");
@@ -134,11 +251,9 @@ io.on("connection", (socket) => {
               console.error("error :" + err);
             });
         }
-      })     
-    }
+      });
+    };
     findDublicateRequest();
-
-   
 
     // const { id, message } = data;
     // io.to(id).emit("message", message);

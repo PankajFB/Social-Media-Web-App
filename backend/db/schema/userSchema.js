@@ -16,7 +16,7 @@ const requestSchema = new mongoose.Schema({
 });
 
 const friendsSchema = new mongoose.Schema({
-  friends: {
+  email: {
     type: String,
     unique: true,
   },

@@ -1,84 +1,84 @@
-import React, { useEffect, useReducer, useState } from "react";
-import { useFirebase } from "../../Context/FirebaseContext";
-import { signOut } from "firebase/auth";
-// import { SocketContext } from "../../Context/SocketContext";
-import { io } from "socket.io-client";
-import { useSocket } from "@/Context/SocketContext";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import ConnectedUsers from "./ConnectedUsers";
-import Chat from "../Chat/Chat";
+import { Socket } from "socket.io-client";
+import { useFirebase } from "@/Context/FirebaseContext";
+import { useSocket } from "@/Context/SocketContext";
 
-function Dashboard() {
+function friends() {
+  const socket = useSocket();
+
   const firebase = useFirebase();
 
   const { auth, singedInUser } = firebase;
 
   const { displayName, email, photoURL } = singedInUser;
 
-  const socket = useSocket();
-  console.log(socket);
+  const [requests, setrequests] = useState([]);
 
-  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [friends, setfriends] = useState([]);
+
+  const acceptRequest = (to) => {
+    socket.emit("accept_request", { to, from: email });
+  };
+
 
   useEffect(() => {
-    // to emit the user data to the server with the socket id
-    socket.emit("my_data", { singedInUser, socketId: socket.id });
+    socket.emit("friend_request_list", { email: email, id: socket.id });
 
-    // to get the connected users from the server
-    socket.on("refresh_user_list", (data) => {
+    socket.emit("friend_list", { email: email, id: socket.id });
+
+    socket.on("friend_request_list", (list) => {
+      const { data } = list;
+      console.log("data is : " , data);
+
       // if  data is not null then set the connected users in the state connectedUsers
-
-
-      const addUniqueEntry = (user) => {
-        const isUnique = !connectedUsers.some((item) => item.socketId === user.socketId);
-    console.log("isUnique is : ", isUnique)
-
-        if (isUnique) {
-          connectedUsers.push(user);
-          setConnectedUsers([...connectedUsers]);
-          console.log("requests are : ", connectedUsers);
-        }
-        else{
-          console.log("not unique so can t be inserted");
-        }
-      }
-
-
       if (data) {
-        console.log(data);
+        const newreq = {user: data}
 
-        data.map((user) => {
-          addUniqueEntry(user);
-        });
-        
-       
-       
-
-        // to set the connected users in the state connectedUsers
-        // setConnectedUsers(data);
-
-        console.log(connectedUsers);
-
-        // const { displayName, email, photoURL, socketId } = data.user;
-        // const newUser = { socketId, displayName, email, photoURL };
-        // connectedUsers.push({ socketId, displayName, email, photoURL });
-        // setConnectedUsers([...connectedUsers, newUser]);
+        const addUniqueEntry = (newreq) => {
+          const isUnique = !requests.some((item) => item.user.email === data.email);
+      
+          if (isUnique) {
+            requests.push(newreq);
+            setrequests([...requests]);
+            console.log("requests are : ", requests);
+          }
+          
+        }
+        addUniqueEntry(newreq);
       } else {
         console.log("no data from the server");
       }
     });
 
-    return () => {
-      socket.off("refresh_user_list");
-    };
-  }, [singedInUser]);
+
+    socket.on("friend_list", (list) => {
+      const { data } = list;
+      console.log("data is : " , data);
+
+      // if  data is not null then set the connected users in the state connectedUsers
+      if (data) {
+        const newFriend = {user: data}
+
+        const addUniqueEntry = (newFriend) => {
+          const isUnique = !friends.some((item) => item.user.email === data.email);
+      
+          if (isUnique) {
+            friends.push(newFriend);
+            setfriends([...friends]);
+            console.log("Friends are : ", friends);
+          }
+          
+        }
+        addUniqueEntry(newFriend);
+      } else {
+        console.log("no data from the server");
+      }
+    });
+  }, []);
 
   return (
     <>
-      {/* just a test to c if scoket if working fine */}
-      {/* <h1>our button is her</h1>
-<button className="btn btn-primary" onClick={clickHandle}></button> */}
-
       <div className="g-sidenav-show">
         <nav
           className="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start position-absolute ms-3 bg-white"
@@ -106,7 +106,7 @@ function Dashboard() {
           >
             <ul className="navbar-nav">
               <li className="nav-item">
-                <a className="nav-link  active" href="/">
+                <Link className="nav-link  active" href="/">
                   <div className="icon icon-shape icon-sm shadow border-radius-md bg-white text-center me-2 d-flex align-items-center justify-content-center">
                     <svg
                       width="12px"
@@ -160,7 +160,7 @@ function Dashboard() {
                     </svg>
                   </div>
                   <span className="nav-link-text ms-1">Dashboard</span>
-                </a>
+                </Link>
               </li>
               <li className="nav-item">
                 <Link className="nav-link  " href="/dashboard/friends">
@@ -644,49 +644,186 @@ function Dashboard() {
             </div>
           </nav>
           <div className="container-fluid pt-3">
+            {/* U need to add the components from here */}
+
             <div className="card mb-4">
-              <div className="card-body p-3">
-                <div className="row">
-                  <div className="col-lg-6">
-                    <div className="d-flex flex-column h-100">
-                      <p className="mb-1 pt-2 text-bold">
-                        Welcome to our platform
-                      </p>
-                      <h5 className="font-weight-bolder">{displayName}</h5>
-                      <p className="mb-5">Email : {email}</p>
-                    </div>
-                  </div>
-                  <div className="col-lg-5 ms-auto text-center mt-5 mt-lg-0">
-                    <div className="bg-gradient-primary border-radius-lg h-100">
-                      <img
-                        src="https://demos.creative-tim.com/soft-ui-dashboard/assets/img/shapes/waves-white.svg"
-                        className="position-absolute h-100 w-50 top-0 d-lg-block d-none"
-                        alt="waves"
-                      />
-                      <div className="position-relative d-flex align-items-center justify-content-center h-100">
-                        <img
-                          className="w-30 position-relative z-index-2 p-1"
-                          src={photoURL}
-                        />
-                      </div>
-                    </div>
-                  </div>
+              <div className="card-header pb-0">
+                <h6>Friend Request</h6>
+              </div>
+              <div className="card-body px-0 pt-0 pb-2">
+                <div className="table-responsive p-0">
+                  <table className="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th className="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          Author
+                        </th>
+                        <th className="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                          Function
+                        </th>
+                        <th className="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          Status
+                        </th>
+                        <th className="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          Employed
+                        </th>
+                        <th className="text-secondary opacity-7" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* we will render the conneteduser list here */}
+                      {/* <h1>This is my name : {props.connectedUsers}</h1> */}
+
+                      {requests.map((user) => (
+                        <tr key={user.user.email}>
+                          <td>
+                            <div className="d-flex px-2 py-1">
+                              <div>
+                                <img
+                                  src={user.user.photoURL}
+                                  alt="DP"
+                                  className="avatar avatar-sm me-3"
+                                />
+                              </div>
+                              <div className="d-flex flex-column justify-content-center">
+                                <h6 className="mb-0 text-sm">
+                                  {user.user.displayName}
+                                </h6>
+                                <p className="text-xs text-secondary mb-0">
+                                  {user.user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <p className="text-xs font-weight-bold mb-0">
+                              {user.user.displayName}
+                            </p>
+                            <p className="text-xs text-secondary mb-0">
+                              Organization
+                            </p>
+                          </td>
+                          <td className="align-middle text-center text-sm">
+                            <span className="badge badge-sm bg-gradient-success">
+                              Online
+                            </span>
+                          </td>
+                          <td className="align-middle text-center">
+                            <span className="text-secondary text-xs font-weight-bold">
+                              23/04/18
+                            </span>
+                          </td>
+                          <td className="align-middle">
+                          
+                            <button
+                              className="btn btn-primary btn-sm"
+                              data-original-title="Add Friend"
+                              type="button"
+                              onClick={() => acceptRequest(user.user.email)}
+                            >
+                              Accept Request
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
-            {/* our connected user components will be here */}
 
-            {connectedUsers ? (
-              <ConnectedUsers
-                connectedUsers={connectedUsers}
-                email={email}
-              ></ConnectedUsers>
-            ) : (
-              <p>Loading...</p>
-            )}
 
-            {/* chat component will be here */}
-            <Chat></Chat>
+{/* The friends list is here */}
+
+<div className="card mb-4">
+              <div className="card-header pb-0">
+                <h6>Friends</h6>
+              </div>
+              <div className="card-body px-0 pt-0 pb-2">
+                <div className="table-responsive p-0">
+                  <table className="table align-items-center mb-0">
+                    <thead>
+                      <tr>
+                        <th className="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          Author
+                        </th>
+                        <th className="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                          Function
+                        </th>
+                        <th className="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          Status
+                        </th>
+                        <th className="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                          Employed
+                        </th>
+                        <th className="text-secondary opacity-7" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* we will render the conneteduser list here */}
+                      {/* <h1>This is my name : {props.connectedUsers}</h1> */}
+
+                      {friends.map((user) => (
+                        <tr key={user.user.email}>
+                          <td>
+                            <div className="d-flex px-2 py-1">
+                              <div>
+                                <img
+                                  src={user.user.photoURL}
+                                  alt="DP"
+                                  className="avatar avatar-sm me-3"
+                                />
+                              </div>
+                              <div className="d-flex flex-column justify-content-center">
+                                <h6 className="mb-0 text-sm">
+                                  {user.user.displayName}
+                                </h6>
+                                <p className="text-xs text-secondary mb-0">
+                                  {user.user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <p className="text-xs font-weight-bold mb-0">
+                              {user.user.displayName}
+                            </p>
+                            <p className="text-xs text-secondary mb-0">
+                              Organization
+                            </p>
+                          </td>
+                          <td className="align-middle text-center text-sm">
+                            <span className="badge badge-sm bg-gradient-success">
+                              Online
+                            </span>
+                          </td>
+                          <td className="align-middle text-center">
+                            <span className="text-secondary text-xs font-weight-bold">
+                              23/04/18
+                            </span>
+                          </td>
+                          <td className="align-middle">
+                          
+                            <button
+                              className="btn btn-primary btn-sm"
+                              data-original-title="Add Friend"
+                              type="button"
+                              onClick={() => acceptRequest(user.user.email)}
+                            >
+                              Accept Request
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+
           </div>
           <footer className="footer pt-3 pb-4">
             <div className="container-fluid">
@@ -753,4 +890,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default friends;
