@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Socket } from "socket.io-client";
 import { useFirebase } from "@/Context/FirebaseContext";
 import { useSocket } from "@/Context/SocketContext";
+import Chat from "@/components/Chat/Chat";
 
 function friends() {
   const socket = useSocket();
@@ -17,10 +18,17 @@ function friends() {
 
   const [friends, setfriends] = useState([]);
 
+  const [chat, setchat] = useState({});
+
   const acceptRequest = (to) => {
     socket.emit("accept_request", { to, from: email });
   };
 
+
+  const startChat = (friendEmail,name) => {
+    socket.emit("start_chat", { to : friendEmail, from: email });
+    setchat({friendEmail,name});
+  };
 
   useEffect(() => {
     socket.emit("friend_request_list", { email: email, id: socket.id });
@@ -809,9 +817,9 @@ function friends() {
                               className="btn btn-primary btn-sm"
                               data-original-title="Add Friend"
                               type="button"
-                              onClick={() => acceptRequest(user.user.email)}
+                              onClick={() => startChat(user.user.email , user.user.displayName)}
                             >
-                              Accept Request
+                              Chat
                             </button>
                           </td>
                         </tr>
@@ -823,6 +831,9 @@ function friends() {
               </div>
             </div>
 
+{
+  chat? <> <Chat chatWith={chat} ></Chat></> : <></>
+}
 
           </div>
           <footer className="footer pt-3 pb-4">

@@ -1,16 +1,36 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,useRef } from "react";
 import styles from "@/styles/Chat.module.css";
 import { useSocket } from "@/Context/SocketContext";
 
-function Chat() {
+function Chat(props) {
+
+  console.log(props.chatWith.name);
+  console.log(props.chatWith);
+
   const socket = useSocket();
 
   //   out outgoing message
   const [outGoingMessage, setOutGoingMessage] = useState("");
 
+  const [IncomingMessage, setIncomingMessage] = useState("");
+
+  const messageEndRef = useRef(null)
+
+  
+  useEffect(() => {
+
+    if (messageEndRef.current) {
+      messageEndRef.current.scrollTop = messageEndRef.current.scrollHeight;
+    }
+
+
+
+  }, [outGoingMessage,IncomingMessage,setIncomingMessage]);
+
   useEffect(() => {
     socket.on("message", (data) => {
       console.log("Message recieved is : " + data);
+      setIncomingMessage(data);
       //   <div className={`${styles.message} ${styles.response}`}>hi</div>
       const newElement = document.createElement("div");
       newElement.classList.add(styles.message, styles.joke);
@@ -32,29 +52,53 @@ function Chat() {
   //     sendMessageToServer();
   //   }, []);
 
-  const sendMessageToServer = () => {
-    socket.emit("message", {
-      message: outGoingMessage,
-      id: "hlpIHr9hRnN0swaTAACr",
-    });
+  const sendMessageToServer = (event) => {
+    // socket.emit("message", {
+    //   message: outGoingMessage,
+    //   email : props.chatWith.friendEmail,
+    // });
+
+    if (event.key === 'Enter') {
+      console.log('Enter key was pressed');
+      socket.emit("message", {
+        message: outGoingMessage,
+        email : props.chatWith.friendEmail,
+      });
+
+      const newElement = document.createElement("div");
+      newElement.classList.add(styles.message, styles.response);
+      newElement.innerText = outGoingMessage;
+      console.log("we need this");
+      console.log(typeof newElement);
+
+      const existingElement = document.getElementById("chat");
+      existingElement.insertAdjacentElement("beforeend", newElement);
+
+
+    setOutGoingMessage("");
+
+
+    }
+
+
   };
 
   return (
     <>
-      <div className={styles.container}>
+     {props.chatWith.name?  <div className={styles.container}>
         <div className={styles.header}>
           <img
             src="https://cdn-icons-png.flaticon.com/512/2233/2233922.png"
             alt=""
             className={styles.avatar}
           />
-          <h3>Chat section</h3>
+          <h3>{props.chatWith.name}</h3>
           {/* <i className={`${styles.fa-solid} ${styles.fa-phone}`}></i> */}
 
           {/* <i className="fa-solid fa-video"></i> */}
           {/* <i className="fa-solid fa-ellipsis-vertical"></i> */}
         </div>
-        <div id="chat" className={styles.chat}>
+        <div id="chat"  className={styles.chat} ref={messageEndRef} >
           <p>Today</p>
           <div className={`${styles.message} ${styles.response}`}>
             Hi this is pankaj
@@ -76,16 +120,17 @@ function Chat() {
             className={styles.inputText}
             value={outGoingMessage}
             onChange={(e) => setOutGoingMessage(e.target.value)}
+            onKeyUp={sendMessageToServer}
           />
           <button
             id="jokeBtn"
             className={styles.btn}
-            onClick={sendMessageToServer}
+            // onClick={sendMessageToServer}
           >
             Send
           </button>
         </div>
-      </div>
+      </div> : <></> }
     </>
   );
 }

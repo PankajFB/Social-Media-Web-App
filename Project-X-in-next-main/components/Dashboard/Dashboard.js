@@ -6,7 +6,6 @@ import { io } from "socket.io-client";
 import { useSocket } from "@/Context/SocketContext";
 import Link from "next/link";
 import ConnectedUsers from "./ConnectedUsers";
-import Chat from "../Chat/Chat";
 
 function Dashboard() {
   const firebase = useFirebase();
@@ -686,7 +685,7 @@ function Dashboard() {
             )}
 
             {/* chat component will be here */}
-            <Chat></Chat>
+            {/* <Chat></Chat> */}
           </div>
           <footer className="footer pt-3 pb-4">
             <div className="container-fluid">

@@ -81,9 +81,16 @@ io.on("connection", (socket) => {
     findDublicateEmail();
     // console.log(User.findOne({email : email}))
 
-    if (displayName) {
-      connectedUsers.push({ user: data.singedInUser, socketId: data.socketId });
+    // if (displayName) {
+    //   connectedUsers.push({ user: data.singedInUser, socketId: data.socketId });
+    // }
+
+    if (!connectedUsers?.user?.email.includes(email)) {
+            connectedUsers.push({ user: data.singedInUser, socketId: data.socketId });
+
     }
+
+
     // console.log("my data is : " + displayName, email, photoURL);
     if (data.singedInUser.displayName) {
       // sending the connected users array to all the clients except the one who is sending the data
@@ -95,8 +102,24 @@ io.on("connection", (socket) => {
   });
 
   socket.on("message", (data) => {
-    const { id, message } = data;
-    io.to(id).emit("message", message);
+    const { email, message } = data;
+    console.log("we got a message");
+
+    console.log(connectedUsers)
+
+    // to send the message to the user specified in the email
+    // we cannot break the map thats why we are using for loop
+    // we have alot of multiple users with the same email address thats why
+    // wehenever it will encounter the first match it will send the message to that user and break the loop
+    for (let i = 0; i < connectedUsers.length; i++) {
+      const element = connectedUsers[i];
+      if (element.user.email === email) {
+        io.to(element.socketId).emit("message", message);
+        break;
+      }
+    }
+
+
     console.log(data);
   });
 
@@ -255,8 +278,6 @@ io.on("connection", (socket) => {
     };
     findDublicateRequest();
 
-    // const { id, message } = data;
-    // io.to(id).emit("message", message);
   });
 
   // removing the user from the connected users array

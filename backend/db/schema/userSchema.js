@@ -26,6 +26,22 @@ const friendsSchema = new mongoose.Schema({
   },
 });
 
+const chatSchema = new mongoose.Schema({
+  from: {
+    type: String,
+  },
+  to: {
+    type: String,
+  },
+  message: {
+    type: String,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+})
+
 const userSchema = new mongoose.Schema({
   displayName: {
     type: String,
@@ -48,6 +64,10 @@ const userSchema = new mongoose.Schema({
 
   friends: {
     type: [friendsSchema],
+  },
+
+  chats : {
+    type: [chatSchema],
   },
 
   dateOfJoining: {
