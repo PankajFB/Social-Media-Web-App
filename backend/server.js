@@ -123,6 +123,29 @@ io.on("connection", (socket) => {
     console.log(data);
   });
 
+
+  socket.on("call_req", (data) => {
+    const { email, peerId } = data;
+    console.log("we got a calling request");
+
+    console.log(connectedUsers)
+
+    // to send the message to the user specified in the email
+    // we cannot break the map thats why we are using for loop
+    // we have alot of multiple users with the same email address thats why
+    // wehenever it will encounter the first match it will send the message to that user and break the loop
+    for (let i = 0; i < connectedUsers.length; i++) {
+      const element = connectedUsers[i];
+      if (element.user.email === email) {
+        io.to(element.socketId).emit("call_req", peerId);
+        break;
+      }
+    }
+
+
+    console.log(data);
+  });
+
   socket.on("friend_request_list", (data) => {
     const { email, id } = data;
 

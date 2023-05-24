@@ -14,6 +14,7 @@ function Chat(props) {
 
   const [IncomingMessage, setIncomingMessage] = useState("");
 
+
   const messageEndRef = useRef(null)
 
   
@@ -22,9 +23,6 @@ function Chat(props) {
     if (messageEndRef.current) {
       messageEndRef.current.scrollTop = messageEndRef.current.scrollHeight;
     }
-
-
-
   }, [outGoingMessage,IncomingMessage,setIncomingMessage]);
 
   useEffect(() => {
@@ -93,25 +91,26 @@ function Chat(props) {
             className={styles.avatar}
           />
           <h3>{props.chatWith.name}</h3>
-          {/* <i className={`${styles.fa-solid} ${styles.fa-phone}`}></i> */}
+         <button >
+         <img
+            src="/assets/call.png"
+            alt="Call Icon"
+            className={styles.avatar}
+          />
+         </button>
+        
+          <img
+            src="/assets/video-call.png"
+            alt="Call Icon"
+            className={styles.avatar}
+          />
 
           {/* <i className="fa-solid fa-video"></i> */}
           {/* <i className="fa-solid fa-ellipsis-vertical"></i> */}
         </div>
         <div id="chat"  className={styles.chat} ref={messageEndRef} >
           <p>Today</p>
-          <div className={`${styles.message} ${styles.response}`}>
-            Hi this is pankaj
-          </div>
-          <div className={`${styles.message} ${styles.response}`}>
-            Hi this is pankaj
-          </div>
-          <div className={`${styles.message} ${styles.response}`}>
-            Hi this is pankaj
-          </div>
-          <div className={`${styles.message} ${styles.response}`}>
-            Hi this is pankaj
-          </div>
+          
         </div>
         <div className={styles.input}>
           <input
@@ -131,6 +130,7 @@ function Chat(props) {
           </button>
         </div>
       </div> : <></> }
+
     </>
   );
 }

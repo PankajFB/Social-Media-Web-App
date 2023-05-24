@@ -50,6 +50,14 @@
   border-radius: 50%;
 }
 
+.header .avatar img {
+  background-color: var(--accent-color);
+  align-self: center;
+  padding: 5px;
+  width: 50px;
+  border-radius: 50%;
+}
+
 .header h3 {
   margin-left: 20px;
   margin-right: auto;
